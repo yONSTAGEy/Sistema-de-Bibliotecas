@@ -1,3 +1,5 @@
+namespace Biblioteca.Models;
+
 public class Livro
 {
     public int ID {get; set;}

@@ -1,7 +1,4 @@
-
-namespace Livros.Models;
-namespace Usuario.Models;
-namespace Emprestimo.Models;
+using Biblioteca.Models;
 
 using Microsoft.EntityFrameworkCore;
 namespace Biblioteca.Data
