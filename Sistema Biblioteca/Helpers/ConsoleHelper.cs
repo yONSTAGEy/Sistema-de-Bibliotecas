@@ -11,7 +11,7 @@ public static class ConsoleHelper
         foreach (Livro livro in livros)
         {
             Console.WriteLine($" {i}. Titulo: {livro.Titulo}");
-            Console.WriteLine($" Autor: {livro.Autor}");
+            Console.WriteLine($" Autores: {string.Join(", ",livro.Autores.Select(a => a.Nome))}");
             Console.WriteLine($" Ano: {livro.Ano}");
             i++;
             Console.WriteLine("-------------------------------------");

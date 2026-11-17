@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using Biblioteca.Models;
 
 public class LivroCriacaoDTO
 {
     [Required]
     public string Titulo { get; set; } = string.Empty;
     [Required]
-    public string Autor { get; set; } = string.Empty;
+    public List<string> Autores { get; set; } = new();
     [Range(1000, 9999)]
     public int Ano { get; set; }
 }

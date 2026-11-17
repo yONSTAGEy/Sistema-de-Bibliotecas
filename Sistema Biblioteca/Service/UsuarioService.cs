@@ -16,7 +16,7 @@ public class UsuarioService
     //CreateSystem.Net.Mail.MailAddress Email;
     public bool AdicionarUsuario(Usuario usuario)
     {
-        if (string.IsNullOrWhiteSpace(usuario.Nome) || !ValidarCPF(usuario.CPF) || !ValidarEmail(usuario.Email))
+        if (string.IsNullOrWhiteSpace(usuario.Nome) || !ValidarCPF(usuario.CPF) || string.IsNullOrWhiteSpace(usuario.Email))
         {
             return false;
         }
@@ -112,7 +112,7 @@ public class UsuarioService
     public bool Update(Usuario usuario)
 
     {
-        var UsuarioExistente = BuscarPorId(usuario.ID);
+        var UsuarioExistente = BuscarPorId(usuario.Id);
         if (UsuarioExistente != null)
         {
         _context.Usuario.Update(usuario);

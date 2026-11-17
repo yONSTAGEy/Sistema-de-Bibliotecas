@@ -1,6 +1,8 @@
 using Biblioteca.Models;
 using Biblioteca.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SistemaDeBiblioteca.API.Services;
 
 namespace SistemaBiblioteca.API.Controllers
 {
@@ -8,20 +10,25 @@ namespace SistemaBiblioteca.API.Controllers
     [ApiController]
     public class LivrosController : ControllerBase
     {
+        private readonly GoogleBooksService _googleBooksService;
         private readonly LivroService _livroService;
 
-        public LivrosController(LivroService livroService)
+        public LivrosController(LivroService livroService, GoogleBooksService googleBooksService)
         {
+            _googleBooksService = googleBooksService;
             _livroService = livroService;
         }
 
         [HttpGet]
-        public ActionResult<List<Livro>> ListarLivros()
+        [AllowAnonymous]
+        public ActionResult<ResultadoPaginado> ListarLivros(string? titulo = null, string? autor = null, bool? Disponivel = null, int page = 1, int pageSize = 8)
         {
-            return Ok(_livroService.ListarLivros());
+            return Ok(_livroService.ListarLivros(titulo, autor, Disponivel, page, pageSize));
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
+
         public ActionResult<Livro> BuscarPorId(int id)
         {
             var livro = _livroService.BuscarPorId(id);
@@ -35,12 +42,15 @@ namespace SistemaBiblioteca.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public ActionResult<Livro> AdicionarLivro([FromBody] LivroCriacaoDTO livroDTO)
         {
             Livro livro = new Livro
             {
                 Ano = livroDTO.Ano,
-                Autor = livroDTO.Autor,
+                Autores = livroDTO.Autores
+                .Select(nome => new Autor {Nome = nome})
+                .ToList(),
                 Titulo = livroDTO.Titulo
             };
 
@@ -57,24 +67,26 @@ namespace SistemaBiblioteca.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public ActionResult<Livro> AtualizarLivro(int id, Livro livro)
+        [Authorize(Roles = "Admin")]
+        public ActionResult<Livro> AtualizarLivro(int id, LivroCriacaoDTO livroDTO)
         {
             if (_livroService.BuscarPorId(id) == null)
             {
                 return NotFound("livro não encontrado");
             }
 
-            var livroAtualizado = _livroService.Update(id, livro.Titulo, livro.Autor, livro.Ano);
+            var livroAtualizado = _livroService.Update(id, livroDTO.Titulo, livroDTO.Autores.Select(nome => new Autor {Nome = nome }).ToList(), livroDTO.Ano);
 
             if (livroAtualizado == false)
             {
                 return BadRequest("Dados inválidos para atualizar o livro.");
 
             }
-            return Ok(livro);
+            return Ok(_livroService.BuscarPorId(id));
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public ActionResult<Livro> ExcluirLivro(int id)
         {
             var livro = _livroService.BuscarPorId(id);
@@ -93,5 +105,14 @@ namespace SistemaBiblioteca.API.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("PesquisarGoogle")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PesquisrGoogle(string termo)
+        {
+            var Resultado = await _googleBooksService.PesquisarLivros(termo);
+            return Ok(Resultado);
+        }
     }
+    
 }

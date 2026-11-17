@@ -1,3 +1,4 @@
+
 using Biblioteca.Data;
 using Biblioteca.Models;
 using Biblioteca.Service;
@@ -10,22 +11,51 @@ namespace SistemaBiblioteca.Tests;
 public class EmprestimoServiceTests
 {
     private SqliteConnection CriarConexao()
-{
-    var connection = new SqliteConnection("Data Source=:memory:");
-    connection.Open();
-    return connection;
-}
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        return connection;
+    }
+
     private AppDbContext CriarContexto(SqliteConnection connection)
-{
-    var options = new DbContextOptionsBuilder<AppDbContext>()
-        .UseSqlite(connection)
-        .Options;
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connection)
+            .Options;
 
-    var context = new AppDbContext(options);
-    context.Database.EnsureCreated();
+        var context = new AppDbContext(options);
+        context.Database.EnsureCreated();
 
-    return context;
-}
+        return context;
+    }
+
+    private List<Autor> CriarAutores(string nome)
+    {
+        return new List<Autor>
+        {
+            new Autor { Nome = nome }
+        };
+    }
+
+    private Livro CriarLivro()
+    {
+        return new Livro
+        {
+            Titulo = "Dom Casmurro",
+            Autores = CriarAutores("Machado de Assis"),
+            Ano = 1899
+        };
+    }
+
+    private Usuario CriarUsuario(string nome, string email, string cpf)
+    {
+        return new Usuario
+        {
+            Nome = nome,
+            Email = email,
+            CPF = cpf
+        };
+    }
 
     [Fact]
     public void DeveBuscarLivroPorId()
@@ -34,12 +64,7 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
+        var livro = CriarLivro();
 
         context.Livros.Add(livro);
         context.SaveChanges();
@@ -69,17 +94,16 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Usuario.Add(usuario);
         context.SaveChanges();
 
-        var resultado = service.BuscarUsuario(usuario.ID);
+        var resultado = service.BuscarUsuario(usuario.Id);
 
         Assert.NotNull(resultado);
         Assert.Equal("João Silva", resultado.Nome);
@@ -104,19 +128,12 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
-
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var livro = CriarLivro();
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.Add(usuario);
@@ -125,12 +142,12 @@ public class EmprestimoServiceTests
         var emprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario.ID
+            UsuarioID = usuario.Id
         };
 
         var resultado = service.Emprestimo(emprestimo);
 
-        Assert.True(resultado);
+        Assert.Equal("Empréstimo feito", resultado);
         Assert.Single(context.Emprestimo);
     }
 
@@ -141,12 +158,11 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Usuario.Add(usuario);
         context.SaveChanges();
@@ -154,12 +170,12 @@ public class EmprestimoServiceTests
         var emprestimo = new Emprestimo
         {
             LivroID = 999,
-            UsuarioID = usuario.ID
+            UsuarioID = usuario.Id
         };
 
         var resultado = service.Emprestimo(emprestimo);
 
-        Assert.False(resultado);
+        Assert.Equal("Livro não encontrado", resultado);
         Assert.Empty(context.Emprestimo);
     }
 
@@ -170,12 +186,7 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
+        var livro = CriarLivro();
 
         context.Livros.Add(livro);
         context.SaveChanges();
@@ -188,7 +199,7 @@ public class EmprestimoServiceTests
 
         var resultado = service.Emprestimo(emprestimo);
 
-        Assert.False(resultado);
+        Assert.Equal("Usuário não encontrado", resultado);
         Assert.Empty(context.Emprestimo);
     }
 
@@ -199,26 +210,19 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
+        var livro = CriarLivro();
 
-        var usuario1 = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var usuario1 = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
-        var usuario2 = new Usuario
-        {
-            Nome = "Pedro Silva",
-            Email = "pedro@gmail.com",
-            CPF = "12345678909"
-        };
+        var usuario2 = CriarUsuario(
+            "Pedro Silva",
+            "pedro@gmail.com",
+            "12345678909"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.AddRange(usuario1, usuario2);
@@ -227,7 +231,7 @@ public class EmprestimoServiceTests
         var primeiroEmprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario1.ID
+            UsuarioID = usuario1.Id
         };
 
         var primeiroResultado = service.Emprestimo(primeiroEmprestimo);
@@ -235,13 +239,13 @@ public class EmprestimoServiceTests
         var segundoEmprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario2.ID
+            UsuarioID = usuario2.Id
         };
 
         var segundoResultado = service.Emprestimo(segundoEmprestimo);
 
-        Assert.True(primeiroResultado);
-        Assert.False(segundoResultado);
+        Assert.Equal("Empréstimo feito", primeiroResultado);
+        Assert.Equal("Livro indisponível", segundoResultado);
         Assert.Single(context.Emprestimo);
     }
 
@@ -252,26 +256,19 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
+        var livro = CriarLivro();
 
-        var usuario1 = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var usuario1 = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
-        var usuario2 = new Usuario
-        {
-            Nome = "Pedro Silva",
-            Email = "pedro@gmail.com",
-            CPF = "12345678909"
-        };
+        var usuario2 = CriarUsuario(
+            "Pedro Silva",
+            "pedro@gmail.com",
+            "12345678909"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.AddRange(usuario1, usuario2);
@@ -280,22 +277,30 @@ public class EmprestimoServiceTests
         var primeiroEmprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario1.ID
+            UsuarioID = usuario1.Id
         };
 
-        Assert.True(service.Emprestimo(primeiroEmprestimo));
+        Assert.Equal(
+            "Empréstimo feito",
+            service.Emprestimo(primeiroEmprestimo)
+        );
 
-        service.DevolverEmprestimo(primeiroEmprestimo);
+        var resultadoDevolucao = service.DevolverEmprestimo(
+            primeiroEmprestimo.ID,
+            usuario1.Id
+        );
+
+        Assert.Equal("Devolução realizada", resultadoDevolucao);
 
         var segundoEmprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario2.ID
+            UsuarioID = usuario2.Id
         };
 
         var resultado = service.Emprestimo(segundoEmprestimo);
 
-        Assert.True(resultado);
+        Assert.Equal("Empréstimo feito", resultado);
         Assert.Equal(2, context.Emprestimo.Count());
     }
 
@@ -306,19 +311,12 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
-
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var livro = CriarLivro();
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.Add(usuario);
@@ -327,7 +325,7 @@ public class EmprestimoServiceTests
         var emprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario.ID
+            UsuarioID = usuario.Id
         };
 
         service.Emprestimo(emprestimo);
@@ -342,19 +340,12 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
-
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var livro = CriarLivro();
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.Add(usuario);
@@ -363,7 +354,7 @@ public class EmprestimoServiceTests
         var emprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario.ID
+            UsuarioID = usuario.Id
         };
 
         service.Emprestimo(emprestimo);
@@ -381,19 +372,12 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
-
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var livro = CriarLivro();
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.Add(usuario);
@@ -402,7 +386,7 @@ public class EmprestimoServiceTests
         var emprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario.ID,
+            UsuarioID = usuario.Id,
             DataDevolucaoReal = DateTime.Now
         };
 
@@ -418,19 +402,12 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
-
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var livro = CriarLivro();
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.Add(usuario);
@@ -439,7 +416,7 @@ public class EmprestimoServiceTests
         context.Emprestimo.Add(new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario.ID
+            UsuarioID = usuario.Id
         });
 
         context.SaveChanges();
@@ -468,19 +445,12 @@ public class EmprestimoServiceTests
         using var context = CriarContexto(connection);
         var service = new EmprestimoService(context);
 
-        var livro = new Livro
-        {
-            Titulo = "Dom Casmurro",
-            Autor = "Machado de Assis",
-            Ano = 1899
-        };
-
-        var usuario = new Usuario
-        {
-            Nome = "João Silva",
-            Email = "joao@gmail.com",
-            CPF = "52998224725"
-        };
+        var livro = CriarLivro();
+        var usuario = CriarUsuario(
+            "João Silva",
+            "joao@gmail.com",
+            "52998224725"
+        );
 
         context.Livros.Add(livro);
         context.Usuario.Add(usuario);
@@ -489,13 +459,16 @@ public class EmprestimoServiceTests
         var emprestimo = new Emprestimo
         {
             LivroID = livro.ID,
-            UsuarioID = usuario.ID
+            UsuarioID = usuario.Id
         };
 
         service.Emprestimo(emprestimo);
 
-        service.DevolverEmprestimo(emprestimo);
+        var resultado = service.DevolverEmprestimo(
+            emprestimo.ID,
+            usuario.Id
+        );
 
-        Assert.NotNull(emprestimo.DataDevolucaoReal);
+        Assert.Equal("Devolução realizada", resultado);
     }
 }

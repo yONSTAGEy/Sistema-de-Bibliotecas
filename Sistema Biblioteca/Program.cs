@@ -31,13 +31,26 @@ namespace SistemaDeBiblioteca
                 {
                     Console.WriteLine("Qual o titulo deseja adicionar");
                     string titulo = Console.ReadLine() ?? "";
-                    Console.WriteLine("Qual o autor");
-                    string autor = Console.ReadLine() ?? "";
+                    Console.WriteLine("Quais o(s) autor(s)");
+                    int quantidade = ConsoleHelper.LerInteiro("Quantos autores? ");
+                    List<Autor> Autores = new List<Autor>();
+                    for(int i = 0; i < quantidade; i++)
+                    {
+                        Console.WriteLine($"Nome do autor {i + 1}: ");
+                        string nome = Console.ReadLine() ?? "";
+
+                        Autor autor = new Autor()
+                        {
+                            Nome = nome
+                        };
+
+                        Autores.Add(autor);
+                    }
                     int ano = ConsoleHelper.LerInteiro("Qual o ano?");
                     Livro livro = new Livro()
                     {
                         Titulo = titulo,
-                        Autor = autor,
+                        Autores = Autores ,
                         Ano = ano
                     };
                     livroService.AdicionarLivro(livro);
@@ -59,13 +72,13 @@ namespace SistemaDeBiblioteca
                 }
                 else if (op == 3)
                 {
-                    var Listar = livroService.ListarLivros();
+                    var Listar = livroService.ListarLivros(null, null);
                     Console.WriteLine("=========== LISTAGEM DE LIVROS ===========");
-                    foreach (Livro livro in Listar)
+                    foreach (Livro livro in Listar.Livros)
                     {
                         Console.WriteLine($"ID: {livro.ID}");
-                        Console.WriteLine($"Titulo: {livro.Titulo }");
-                        Console.WriteLine($"Autor: {livro.Autor}");
+                        Console.WriteLine($"Titulo: {livro.Titulo}");
+                        Console.WriteLine($" Autores: {string.Join(", ", livro.Autores.Select(a => a.Nome))}");
                         Console.WriteLine($"Ano: {livro.Ano}");
                         Console.WriteLine("----------------");
                     }
@@ -82,7 +95,7 @@ namespace SistemaDeBiblioteca
                     Console.WriteLine("===== LIVRO SELECIONADO =====");
                     Console.WriteLine($"ID: {livroSelecionado.ID}");
                     Console.WriteLine($"Titulo: {livroSelecionado.Titulo}");
-                    Console.WriteLine($"Autor: {livroSelecionado.Autor}");
+                    Console.WriteLine($"Autor: {string.Join(", ",livroSelecionado.Autores.Select(a => a.Nome))}");
                     Console.WriteLine($"Ano: {livroSelecionado.Ano}");
                     Console.WriteLine("-----------------------------");
 
@@ -98,7 +111,7 @@ namespace SistemaDeBiblioteca
                     Console.WriteLine();
                     Console.WriteLine("===== LIVRO SELECIONADO =====");
                     Console.WriteLine($"Título: {LivroEscolhido.Titulo}");
-                    Console.WriteLine($"Autor: {LivroEscolhido.Autor}");
+                    Console.WriteLine($"Autores: {string.Join(", ", LivroEscolhido.Autores.Select(a => a.Nome))}");
                     Console.WriteLine($"Ano: {LivroEscolhido.Ano}");
                     Console.WriteLine("-----------------------------");
                     Console.WriteLine();
@@ -109,12 +122,53 @@ namespace SistemaDeBiblioteca
                     {
                         novoTitulo = LivroEscolhido.Titulo; // Mantém o título atual se a entrada for vazia
                     }
-                    Console.WriteLine("Qual o novo Autor do livro");
-                    string autor = Console.ReadLine() ?? "";
-                    if (string.IsNullOrWhiteSpace(autor))
+
+                    Console.WriteLine("Deseja Alterar os Autores? S/N: ");
+                    string Resposta = Console.ReadLine() ?? "";
+
+                    while(Resposta.ToUpper() != "S" && Resposta.ToUpper() != "N")
                     {
-                        autor = LivroEscolhido.Autor; // Mantém o autor atual se a entrada for vazia
+                        Console.WriteLine("Resposta invalida, Digite S ou N");
+                        Resposta = Console.ReadLine() ?? "";
                     }
+
+                    List<Autor> autores = new List<Autor>();
+
+                    if(Resposta.ToUpper() == "S")
+                    {
+                        int quantidade = ConsoleHelper.LerInteiro("Quantos novos autores? ");
+
+                        while(quantidade <= 0)
+                        {
+                            Console.WriteLine("A quantidade precisa ser maior que 0");
+                            quantidade = ConsoleHelper.LerInteiro("Quantos novos autores? ");
+                        }
+                        
+                        for(int i = 0; i < quantidade; i++)
+                        {
+                            Console.WriteLine("Qual o nome do autor? ");
+                            string nomeAutor = Console.ReadLine() ?? "";
+
+                            while (string.IsNullOrWhiteSpace(nomeAutor))
+                            {
+                                Console.WriteLine("O nome não pode ficar vazio.");
+                                Console.WriteLine("Qual o nome do autor? ");
+                                nomeAutor = Console.ReadLine() ?? "";
+                            }
+
+                            Autor novoAutor = new Autor()
+                            {
+                                Nome = nomeAutor
+                            };
+
+                            autores.Add(novoAutor);
+                        }
+                    }
+                    else if(Resposta.ToUpper() == "N")
+                    {
+                        autores = LivroEscolhido.Autores.ToList();
+                    }
+
                     Console.WriteLine("Qual o novo Ano do livro");
                     string novoAnoInput = Console.ReadLine() ?? "";
                     int Novoano;
@@ -122,19 +176,19 @@ namespace SistemaDeBiblioteca
                     {
                         Novoano = LivroEscolhido.Ano;// Mantém o ano atual se a entrada for vazia
                     }
-                    
+
                     else if (!int.TryParse(novoAnoInput, out Novoano))
                     {
                         Console.WriteLine("Ano inválido. Mantendo o ano atual.");
                         Novoano = LivroEscolhido.Ano; // Mantém o ano atual se a entrada
                     }
-                    bool Atualizar = livroService.Update(LivroEscolhido.ID, novoTitulo, autor, Novoano);
+                    bool Atualizar = livroService.Update(LivroEscolhido.ID, novoTitulo, autores, Novoano);
                     if (Atualizar)
                     {
                         Console.WriteLine();
                         Console.WriteLine("===== LIVRO ATUALIZADO =====");
                         Console.WriteLine($"Título: {novoTitulo}");
-                        Console.WriteLine($"Autor: {autor}");
+                        Console.WriteLine($"Autores: {string.Join(", ", autores.Select(a => a.Nome))}");
                         Console.WriteLine($"Ano: {Novoano}");
                         Console.WriteLine("-----------------------------");
                     }
@@ -213,12 +267,12 @@ namespace SistemaDeBiblioteca
 
                     Emprestimo emprestimoLivro = new Emprestimo()
                     {
-                        UsuarioID = UsuarioEscolhido.ID,
+                        UsuarioID = UsuarioEscolhido.Id,
                         LivroID = LivroEscolhido.ID,
                     };
 
-                    bool Criado = emprestimoService.Emprestimo(emprestimoLivro);
-                    if (Criado)
+                    string Criado = emprestimoService.Emprestimo(emprestimoLivro);
+                    if (Criado == "Empréstimo feito")
                     {
                         Console.WriteLine("Criado empréstimo");
                     }
@@ -252,7 +306,7 @@ namespace SistemaDeBiblioteca
                         Console.WriteLine("Escolha inválida.");
                         continue;
                     }
-                    var emprestimosDoUsuario = emprestimoService.ListarEmprestimo().Where(e => e.UsuarioID == usuarioSelecionado.ID).ToList();
+                    var emprestimosDoUsuario = emprestimoService.ListarEmprestimo().Where(e => e.UsuarioID == usuarioSelecionado.Id).ToList();
 
                     if (emprestimosDoUsuario.Count == 0)
                     {
@@ -289,7 +343,7 @@ namespace SistemaDeBiblioteca
                     }
 
                     var ListarEmprestimo = emprestimoService.ListarEmprestimo();
-                    var emprestimosPendentes = ListarEmprestimo.Where(e => e.UsuarioID == usuarioSelecionado.ID && e.DataDevolucaoReal == null).ToList();
+                    var emprestimosPendentes = ListarEmprestimo.Where(e => e.UsuarioID == usuarioSelecionado.Id && e.DataDevolucaoReal == null).ToList();
 
                     if (emprestimosPendentes.Count == 0)
                     {
@@ -297,11 +351,11 @@ namespace SistemaDeBiblioteca
                         continue; // ou continue, dependendo de como está seu while
                     }
 
-                    
+
 
                     Console.WriteLine($"=========== EMPRÉSTIMOS DE {usuarioSelecionado.Nome.ToUpper()} ===========");
 
-                    ConsoleHelper.MostrarEmprestimos(emprestimosPendentes, livroService, usuarioSelecionado.Nome);   
+                    ConsoleHelper.MostrarEmprestimos(emprestimosPendentes, livroService, usuarioSelecionado.Nome);
 
                     int escolhaEmprestimo = ConsoleHelper.LerInteiro("Escolha um empréstimo pelo número");
 
@@ -313,8 +367,15 @@ namespace SistemaDeBiblioteca
                         continue; // ou break, dependendo de como está seu while
                     }
 
-                    emprestimoService.DevolverEmprestimo(emprestimoSelecionado);
-                    Console.WriteLine("Livro devolvido com sucesso!");
+                    string resultado = emprestimoService.DevolverEmprestimo(emprestimoSelecionado.ID, usuarioSelecionado.Id);
+                    if (resultado == "Devolução realizada")
+                    {
+                        Console.WriteLine("Livro devolvido com sucesso!");
+                    }
+                    else
+                    {
+                        Console.WriteLine(resultado);
+                    }
 
                     var multa = emprestimoSelecionado.CalcularMulta();
                     if (multa > 0)

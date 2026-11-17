@@ -1,12 +1,14 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Biblioteca.Models;
 
 using Microsoft.EntityFrameworkCore;
 namespace Biblioteca.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>
     {
         public DbSet<Livro> Livros { get; set; }
-
+        public DbSet<Autor> Autores { get; set; }
         public DbSet<Usuario> Usuario { get; set; }
         public DbSet<Emprestimo> Emprestimo { get; set; }
 
@@ -62,6 +64,14 @@ namespace Biblioteca.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Usuario>().ToTable("Usuario");
+
+            modelBuilder.Entity<Usuario>()
+            .Property(u => u.Id)
+            .HasColumnName("ID");
+
             modelBuilder.Entity<Emprestimo>()
         .HasOne(e => e.Livros)
         .WithMany()
@@ -73,6 +83,10 @@ namespace Biblioteca.Data
             .WithMany()
             .HasForeignKey(e => e.UsuarioID)
             .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Livro>()
+            .HasMany(l => l.Autores)
+            .WithMany(a => a.Livros);
         }
     }
 }
